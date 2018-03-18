@@ -36,10 +36,11 @@ Class Controller_Money Extends Controller_Base
             );
 
             $model = new Model_Money($select);
+            $money = $model->getOneRow(); //получаем данные юзверя
             // извлекаем данные
             $model->fetchOne();
 
-            $balance = $_SESSION['balance'];
+            $balance = $money['balance'];
             if ($balance > $summ) {
                 if (is_numeric($summ)) {
                     $summ = floatval($summ);
