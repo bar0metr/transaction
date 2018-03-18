@@ -145,80 +145,6 @@ Abstract Class Model_Base
         return $row;
     }
 
-    // выполнение запроса к базе данных
-
-    public function save()
-    {
-        $arrayAllFields = array_keys($this->fieldsTable());
-        $arraySetFields = array();
-        $arrayData = array();
-        foreach ($arrayAllFields as $field) {
-            if (!empty($this->$field)) {
-                $arraySetFields[] = $field;
-                $arrayData[] = $this->$field;
-            }
-        }
-        $forQueryFields = implode(', ', $arraySetFields);
-        $rangePlace = array_fill(0, count($arraySetFields), '?');
-        $forQueryPlace = implode(', ', $rangePlace);
-
-        try {
-            $db = $this->db;
-            $stmt = $db->prepare("INSERT INTO $this->table ($forQueryFields) values ($forQueryPlace)");
-            $result = $stmt->execute($arrayData);
-        } catch (PDOException $e) {
-            echo 'Error : ' . $e->getMessage();
-            echo '<br/>Error sql : ' . "'INSERT INTO $this->table ($forQueryFields) values ($forQueryPlace)'";
-            exit();
-        }
-
-        return $result;
-    }
-
-    // уделение записей из базы данных по условию
-
-    public function deleteBySelect($select)
-    {
-        $sql = $this->_getSelect($select);
-        try {
-            $db = $this->db;
-            $result = $db->exec("DELETE FROM $this->table " . $sql);
-        } catch (PDOException $e) {
-            echo 'Error : ' . $e->getMessage();
-            echo '<br/>Error sql : ' . "'DELETE FROM $this->table " . $sql . "'";
-            exit();
-        }
-        return $result;
-    }
-
-    // уделение строки из базы данных
-    public function deleteRow()
-    {
-        $arrayAllFields = array_keys($this->fieldsTable());
-
-        foreach ($arrayAllFields as $key => $val) {
-            $arrayAllFields[$key] = strtoupper($val);
-        }
-
-        if (in_array('ID', $arrayAllFields)) {
-            try {
-                $db = $this->db;
-                $result = $db->exec("DELETE FROM $this->table WHERE `id` = $this->id");
-                foreach ($arrayAllFields as $one) {
-                    unset($this->$one);
-                }
-            } catch (PDOException $e) {
-                echo 'Error : ' . $e->getMessage();
-                echo '<br/>Error sql : ' . "'DELETE FROM $this->table WHERE `id` = $this->id'";
-                exit();
-            }
-        } else {
-            echo "ID table `$this->table` not found!";
-            exit;
-        }
-        return $result;
-    }
-
     // обновление записи. Происходит по ID
     public function update()
     {
@@ -246,8 +172,10 @@ Abstract Class Model_Base
 
         try {
             $db = $this->db;
+            $db->begintransaction();
             $stmt = $db->prepare("UPDATE $this->table SET $strForSet WHERE `id` = $whereID");
             $result = $stmt->execute();
+            $db->commit();
         } catch (PDOException $e) {
             echo 'Error : ' . $e->getMessage();
             echo '<br/>Error sql : ' . "'UPDATE $this->table SET $strForSet WHERE `id` = $whereID'";
